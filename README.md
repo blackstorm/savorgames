@@ -5,8 +5,7 @@
 
 # 后端
 ## 如何使用？
-前往 target 目录获取 sql 结构，导入 sql 是请阅读脚本
-
+前往 target 目录获取 sql 结构。请阅读 sql 文件后导入
 后端 Java 使用 mvn 构建，修改配置文件后正常步骤即可。
 
 ### 关于fabric
@@ -24,7 +23,7 @@ cooking build 编译项目
 
 ### 注意：请使用 vue 1.0 版本，注意依赖关系
 
-# ngxin 
+# nginx
 
 跟 nginx 有什么关系？（请阅读 vue-router 服务器配置）
 
