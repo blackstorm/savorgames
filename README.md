@@ -1,4 +1,4 @@
-# savorgames.com 前后端分离整站源码
+# savorgames.com 前后端分离
 后端 spring + mybatis + druid + ssdb
 
 前端 Vue 全家桶
