@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savorgames.dao.TagDao">
+	<!-- 数据库字段映射 -->
+	<resultMap type="com.savorgames.entity.Tag" id="FullResult">    
+    	<id column="tag_id" property="id"/>
+    	<result column="tag_name" property="name"/>
+    	<result column="tag_des" property="description"/>
+    	<result column="tag_icon" property="icon"/>
+    	<result column="tag_create" property="create"/>
+    	<result column="tag_topic_num" property="topicNum"/>
+	</resultMap> 
+	<!-- 查询所有标签 -->
+	<select id="findAllTag" resultMap="FullResult">
+	  SELECT * FROM tag
+	</select>
+	<select id="findTagIsExistById" resultType="Integer" parameterType="long">
+	  SELECT 1 from tag WHERE tag_id = #{id} LIMIT 1
+	</select>
+	
+	<resultMap type="com.savorgames.dao.dto.TagDaoDto" id="topicTags">
+    	<id column="tag_id" property="tagId"/>
+    	<result column="tag_name" property="tagName"/>
+	</resultMap>
+	<select id="selectTagsByTid" resultMap="topicTags" parameterType="long">
+	  SELECT t.tag_id,t.tag_name FROM topic_tags AS tt, tag AS t WHERE tt.topic_id = #{tid} AND tt.tag_id = t.tag_id
+	</select>
+</mapper>

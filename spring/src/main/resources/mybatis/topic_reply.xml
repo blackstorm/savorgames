@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savorgames.dao.TopicReplyDao">
+	<!-- 数据库字段映射 -->
+	<resultMap type="com.savorgames.dao.dto.TopicReplyDaoDto" id="resMap">    
+    	<id column="id" property="id"/>
+    	<result column="topic_id" property="topicId"/>
+    	<result column="parent_id" property="parentId"/>
+    	<result column="user_id" property="useId"/>
+    	<result column="content" property="content"/>
+    	<result column="created" property="date"/>
+    	<result column="rank" property="rank"/>
+    	<result column="status" property="status"/>
+	</resultMap>
+	<resultMap type="com.savorgames.dao.dto.TopicReplyDaoDto" id="resplysResMap">
+    	<id column="id" property="id"/>
+    	<!-- <result column="topic_id" property="topicId"/> -->
+    	<result column="parent_id" property="parentId"/>
+    	<result column="user_id" property="memberId"/>
+    	<result column="avatar" property="memberAvatar"/>
+    	<result column="nickname" property="memberNickname"/>
+    	<result column="content" property="content"/>
+    	<result column="created" property="date"/>
+    	<result column="rank" property="rank"/>
+    	<!-- <result column="status" property="status"/> -->
+	</resultMap>
+	<!-- 查询所有标签 -->
+	<select id="selectReplysByTopicId" resultMap="resplysResMap" parameterType="long">
+	  SELECT r.id,r.user_id,u.avatar,u.nickname,r.parent_id,r.content,r.created,r.rank
+	  FROM topic_reply AS r, `user` AS u 
+	  WHERE r.topic_id = #{tid} AND r.`status` = 0 AND r.user_id = u.uid
+	</select>
+	<insert id="insterReply" parameterType="com.savorgames.entity.TopicReply" useGeneratedKeys="true" keyProperty="id">
+	  INSERT INTO topic_reply(topic_id,parent_id,user_id,content,created) VALUES(#{topicId},#{parentId},#{memberId},#{content},#{date})
+	</insert>
+	<update id="updateRank">
+		UPDATE topic_reply SET rank = rank + 1 WHERE id = #{0}
+	</update>
+	<select id="selectReplyById" resultMap="resplysResMap" parameterType="long">
+	  SELECT r.id,u.avatar,u.nickname,r.parent_id,r.content,r.created,r.rank
+	  FROM topic_reply AS r, `user` AS u 
+	  WHERE r.id = #{0} AND r.`status` = 0 AND r.user_id = u.uid
+	</select>
+</mapper>

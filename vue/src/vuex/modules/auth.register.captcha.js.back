@@ -1,0 +1,20 @@
+import {
+  GET_CAPTCHA_ID
+} from '../types';
+
+const state = {
+  id: null,
+  url: null
+};
+
+const mutations = {
+  [GET_CAPTCHA_ID](state, id, url) {
+    state.id = id;
+    state.url = url;
+  }
+};
+
+export default {
+  state,
+  mutations
+};

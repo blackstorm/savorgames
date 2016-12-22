@@ -1,0 +1,200 @@
+<template>
+      <div class="avatarplane plane">
+        <div class="columns">
+          <div>
+            <input class="selectAvatarInput" type="file" @change="fileOnChange($event)" accept="images/*" />      
+            <div class="avatarInner">
+              <div class="resizer" v-el:resizer>
+                <img :src="avatar.imgUrl" class="selectAvatar" v-el:imagefile v-bind:class="{'noavatar': avatar.noavatar}">      
+                <div class="frames" v-el:frames v-bind:style="frames" v-show:="avatar.noavatar ? false : true" @mousedown="mouseDown($event)" @mousemove="mouseMove($event)" @mouseup="mouseUp($event)"></div>
+              </div>
+            </div>
+            <button class="btn btn-block" style="margin-top:10px;" v-show:="avatar.noavatar ? false : true" @click.prevent="clipImage()">剪裁</button>
+          </div>
+          <div class="column col-6">
+            <div class="large-wrapper">
+              <canvas v-show:="canvas.show" width="128" height="128" v-el:canvas></canvas>
+              <button class="btn btn-block" @click.prevent="onSubmit()">开始上传</button>
+            </div>
+          </div>
+        </div>
+      </div>
+</template>
+<script>
+import { AvatarUploadApi, Qiniu_UploadUrl } from '../../../../api/resources';
+import { uploadAvatarCallBackAction } from '../../../../vuex/actions';
+
+export default {
+  vuex: {
+    actions: {
+      uploadAvatarCallBackAction
+    }
+  },
+  data() {
+    return {
+      avatar: {
+        noavatar: true,
+        imgUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+      },
+      frames: {
+        top: '0px',
+        left: '0px',
+        lastPoint: null
+      },
+      canvas: {
+        show: false
+      },
+      qiniu: {
+        token: null,
+        key: null,
+        blob: null
+      }
+    };
+  },
+  methods: {
+    fileOnChange(event) {
+      console.log(event.target.files[0]);
+      if (typeof FileReader === 'undefined') {
+        window.alert('浏览器不支持');
+      }
+      var reader = new FileReader();
+      var that = this;
+      reader.onload = function() {
+        var url = reader.result;
+        that.setImgUrl(url);
+      };
+      var file = event.target.files[0];
+      reader.readAsDataURL(file);
+    },
+    setImgUrl(url) {
+      this.avatar.noavatar = false;
+      this.avatar.imgUrl = url;
+    },
+    getOffset(event) {
+      var x, y;
+      if (event.touches) {
+        var touch = event.touches[0];
+        x = touch.clientX;
+        y = touch.clientY;
+      } else {
+        x = event.clientX;
+        y = event.clientY;
+      };
+      if (!this.lastPoint) {
+        this.lastPoint = {
+          x: x,
+          y: y
+        };
+      };
+      var offset = {
+        x: x - this.lastPoint.x,
+        y: y - this.lastPoint.y
+      };
+      this.lastPoint = {
+        x: x,
+        y: y
+      };
+      // console.log(offset);
+      return offset;
+    },
+    mouseDown(event) {
+      this.getOffset(event);
+    },
+    mouseMove(event) {
+      if (!this.lastPoint) return;
+      var offset = this.getOffset(event);
+      this.moveFrames(offset);
+    },
+    moveFrames(offset) {
+      var x = offset.x;
+      var y = offset.y;
+      var top = this.$els.frames.offsetTop;
+      var left = this.$els.frames.offsetLeft;
+      var size = this.$els.frames.offsetSize;
+      var width = this.$els.resizer.offsetWidth;
+      var height = this.$els.resizer.offsetHeight;
+      if (x + size + left > width) {
+        x = width - size;
+      } else {
+        x = x + left;
+      };
+      if (y + size + top > height) {
+        y = height - size;
+      } else {
+        y = y + top;
+      };
+      x = x < 0 ? 0 : x;
+      y = y < 0 ? 0 : y;
+      x = x + 72 > width ? width - 72 : x; // 防止越界
+      y = y + 72 > height ? height - 72 : y;
+      this.frames = {
+        top: y + 'px',
+        left: x + 'px'
+      };
+    },
+    mouseUp(event) {
+      this.lastPoint = null;
+    },
+    clipImage() {
+      // var nh = this.$els.imagefile.naturalHeight; // 获取图片高度
+      var nw = this.$els.imagefile.naturalWidth; // 获取图片宽度
+      var canvas = this.$els.canvas;
+      var ctx = canvas.getContext('2d');
+      var scale = nw / this.$els.resizer.offsetWidth;
+      var x = this.$els.frames.offsetLeft * scale;
+      var y = this.$els.frames.offsetTop * scale;
+      ctx.drawImage(this.$els.imagefile, x, y, 128 * scale, 128 * scale, 0, 0, 128, 128);
+      var src = canvas.toDataURL();
+      src = src.split(',')[1];
+      src = window.atob(src);
+      var ia = new window.Uint8Array(src.length);
+      for (var i = 0; i < src.length; i++) {
+        ia[i] = src.charCodeAt(i);
+      }
+      var blob = new Blob([ia], {type: 'image/png'});
+      this.canvas.show = true;
+      this.qiniu.blob = blob;
+    },
+    onSubmit() {
+      console.log(this.qiniu);
+      if (this.qiniu.token === null || this.qiniu.blob === null || this.qiniu.key === null) {
+        window.alert('抱歉，可能上传令牌没有获取到，请刷新尝试获取');
+        return;
+      };
+      var formData = new FormData();
+      formData.append('token', this.qiniu.token);
+      formData.append('file', this.qiniu.blob);
+      formData.append('key', this.qiniu.key);
+      this.$http.post(Qiniu_UploadUrl, formData, {credentials: false, headers: {'Content-Type': 'multipart/form-data'}}).then((response) => {
+        console.log(response.data);
+        this.uploadAvatarCallBackAction(response.data);
+      }, response => {
+        window.alert(response.data.error);
+      });
+    }
+  },
+  ready() {
+    this.$http.get(AvatarUploadApi).then((response) => {
+      if (!response.ok || response.data.status !== 'success') {
+        window.alert('获取token失败:' + response.data.message);
+        return;
+      }
+      this.qiniu.token = response.data.token;
+      this.qiniu.key = response.data.key;
+    }, (response) => {
+      window.alert('获取token失败');
+    });
+  }
+};
+</script>
+<style>
+.large-wrapper>canvas{
+    max-width: 100%;
+    margin: auto;
+    display: block;
+    border-radius: 50%;
+}
+.resizer{
+  overflow: hidden;
+}
+</style>

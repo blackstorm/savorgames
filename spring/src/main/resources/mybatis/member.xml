@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savorgames.dao.MemberDao">
+  <select id="test" resultType="com.savorgames.entity.Member">
+   	SELECT username,password,regdate FROM user;
+  </select>
+  
+  <select id="findUidByEmail" resultType="Integer" parameterType="string">
+  	SELECT uid FROM user WHERE email = #{email}
+  </select>
+  
+  <select id="findUidByUsername" resultType="Integer" parameterType="string">
+  	SELECT uid FROM user WHERE username = #{username}
+  </select>
+  
+  <select id="findMemberByUsername" resultType="com.savorgames.entity.Member" parameterType="string">
+  	SELECT * FROM user WHERE username = #{username}
+  </select>
+  
+  <select id="selectMemberByUsername" resultType="Map" parameterType="string">
+  	SELECT u.username,u.nickname,u.uid,u.regdate,u.avatar FROM user AS u WHERE u.username = #{username}
+  </select>
+  
+  <select id="selectMemberByUid" resultType="Map" parameterType="long">
+  	SELECT u.username,u.nickname,u.uid,u.regdate,u.avatar FROM user AS u WHERE u.uid = #{uid}
+  </select>
+  
+  <select id="findMemberByUid" resultType="com.savorgames.entity.Member" parameterType="long">
+  	SELECT username,email,uid,nickname,regdate,avatar FROM user WHERE uid = #{uid}
+  </select>
+  
+   <select id="findMemberByEmail" resultType="com.savorgames.entity.Member" parameterType="string">
+  	SELECT * FROM user WHERE email = #{email}
+  </select>
+  
+  <!-- 通过用户ID查询用户权限 -->
+  <select id="findMemberRoleByUid" resultType="com.savorgames.entity.Role" parameterType="long">
+  	SELECT * FROM roles WHERE role_id in (SELECT role_id FROM user_roles WHERE user_id = #{uid})
+  </select>
+
+  <!-- 通过用户名查询用户权限 -->
+  <select id="findMemberRoleByUsername" resultType="com.savorgames.entity.Role" parameterType="String">
+  	SELECT * FROM roles WHERE role_id in (SELECT ur.role_id FROM user_roles AS ur ,user AS u WHERE u.uid = ur.user_id AND u.username = #{username})
+  </select>
+  
+  <!-- 通过邮箱查询用户权限 -->
+  <select id="findMemberRoleByEmail" resultType="com.savorgames.entity.Role" parameterType="String">
+  	SELECT * FROM roles WHERE role_id in (SELECT ur.role_id FROM user_roles AS ur ,user AS u WHERE u.uid = ur.user_id AND u.email = #{email})
+  </select>
+  
+  <insert id="save" parameterType="com.savorgames.entity.Member" keyProperty="uid">
+  	INSERT INTO user(username,password,email,nickname,regdate,avatar) VALUES(#{username},#{password},#{email},#{nickname},#{regdate},#{avatar})
+  </insert>
+
+  <insert id="insertAndGetUid" parameterType="com.savorgames.entity.Member" keyProperty="uid" useGeneratedKeys="true">
+  	INSERT INTO user(username,password,email,nickname,regdate) VALUES(#{username},#{password},#{email},#{nickname},#{regdate})
+  </insert>
+  
+  <update id="uploadMemberAvatarByUid">
+  	UPDATE user SET avatar = #{1} WHERE uid = #{0}
+  </update>
+  
+  <update id="uploadNicknameByUid">
+  	UPDATE user SET nickname = #{1} WHERE uid = #{0}
+  </update>
+  
+   <update id="uploadPasswordByUid">
+  	UPDATE user SET password = #{1} WHERE uid = #{0}
+  </update>
+  
+   <select id="findMemberQiniuAvatarByUid" resultType="String" parameterType="long">
+  	SELECT avatar FROM user WHERE uid = #{uid}
+  </select>
+</mapper>

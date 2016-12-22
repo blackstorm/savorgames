@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savorgames.dao.TopicTagsDao">
+  <!-- 插入单个 -->
+  <insert id="insert" parameterType="com.savorgames.entity.TopicTags">
+    INSERT INTO "topic_tags"(tag_id,topic_id,uid) VALUES(#{tagId},#{topicId},#{uid})
+  </insert>
+  <!-- 插入多个 -->
+  <insert id="batchInsert" parameterType="java.util.List">  
+    INSERT INTO topic_tags(tag_id,topic_id,uid) VALUES
+    <foreach collection="list" item="item" index="index" separator=",">  
+      (#{item.tagId},#{item.topicId},#{item.uid})  
+    </foreach>  
+  </insert>
+  <!-- 删除主题下所有标签 -->
+  <delete id="deleteAllTopicTagsByTopicId" parameterType="long">
+    DELETE FROM topic_tags WHERE topic_id = #{tid}
+  </delete>
+</mapper>

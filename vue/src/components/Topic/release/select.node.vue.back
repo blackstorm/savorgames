@@ -1,0 +1,109 @@
+<template>
+  <div class="form-group">
+  <div style="position: relative;z-index:1000;">
+    <a href="javascript:;"class="btn btn-primary btn-block" @click.prevent="selectNodeOnClick()">
+      {{node.select == null ? '选择一个节点' : node.select.name}}
+    </a>
+    <div class="selectBox" v-show:="node.selectBoxShow">
+      <div class="seach">
+        <input class="form-input" type="text" v-model="node.searchKey" placeholder="搜索" @input="seachNodes()"/>  
+      </div>
+      <ul class="results">
+        <li v-for="n in node.data | orderBy 'name'" @click.prevent="nodeOnClick(n)" track-by="nid" class="animated" transition="bounce" stagger="30">
+          {{n.name}}
+          <small>{{n.description}}</small>
+        </li>
+      </ul>
+      <p class="message" v-show="!node.data">
+        哦，没有找符合的节点
+        <a href="">创建</a>
+        <br>  
+        <br>  
+        <a href="javascript;'" @click.prevent="setSearchKeyNil()">清空</a>
+      </p>
+    </div>
+  </div>
+  </div>
+</template>
+<script>
+import {getNodesAction} from '../../../vuex/actions';
+
+export default {
+  vuex: {
+    getters: {
+      nodesStore: ({Node}) => Node.nodes
+    },
+    actions: {
+      getNodesAction
+    }
+  },
+  data() {
+    return {
+      node: {
+        data: null, // 负责节点列表的显示
+        selectBoxShow: false,
+        searchKey: null,
+        select: null
+      }
+    };
+  },
+  methods: {
+    nodeOnClick(n) {
+      // set操作比较耗时，这里我们加入判断
+      if (this.node.select !== null && n.nid === this.node.select.nid) {
+        this.node.selectBoxShow = false;
+        return;
+      }
+      this.node.select = n;
+      this.node.selectBoxShow = false;
+    },
+    setSearchKeyNil() {
+      this.node.searchKey = null;
+      this.seachNodes();
+    },
+    selectNodeOnClick() {
+      this.node.selectBoxShow === false ? this.node.selectBoxShow = true : this.node.selectBoxShow = false;
+      this.seachNodes();
+    },
+    // 注意这里可以使用 filter 但是无法显示提醒，所以这是个问题
+    seachNodes() {
+      var key = this.node.searchKey;
+      if (key === null || key === '') {
+        this.node.data = this.nodesStore;
+        return;
+      }
+      var nodes = this.nodesStore;
+      var res = [];
+      for (var i in nodes) {
+        // console.log(nodes[i].name); 每次输入都会被遍历一次，达到动态效果
+        if (nodes[i].name.indexOf(key) !== -1) {
+          res.push(nodes[i]);
+          continue; // 如果查询到就跳出本次循环
+        }
+        if (nodes[i].description.indexOf(key) !== -1) {
+          res.push(nodes[i]);
+        }
+      }
+      // console.log(res.length);
+      if (res.length === 0) {
+        this.node.data = null;
+        return;
+      }
+      this.node.data = res;
+    }
+  },
+  transitions: {
+    bounce: {
+      enterClass: 'bounceInLeft',
+      leaveClass: 'bounceOutRight'
+    }
+  },
+  created() {
+    if (this.nodesStore === null) {
+      this.getNodesAction();
+    }
+  }
+};
+</script>
+<style>
+</style>

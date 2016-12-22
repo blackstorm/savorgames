@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.savorgames.dao.RankRecordDao">
+	<select id="selectMemberIsRank" resultType="Integer">
+	  SELECT 1 FROM rank_record WHERE target_id = #{2} AND user_id = #{1} AND type = #{0} LIMIT 1
+	</select>
+	<insert id="insert">
+	  INSERT INTO rank_record(type, user_id, target_id) VALUES(#{0},#{1},#{2})
+	</insert>
+</mapper>

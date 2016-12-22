@@ -1,0 +1,341 @@
+<template>
+  <div class="box">
+    <div class="columns">
+
+      <!-- 修改昵称 -->
+      <div class="column col-9">
+        <form class="form-horizontal" action="#forms">
+          <div class="form-group">
+            <div class="col-sm-2">
+              <label class="form-label" for="input-example-4">用户名</label>
+            </div>
+            <div class="col-sm-9">
+              <input class="form-input" type="text" :value="user.username" readonly="readonly">  
+              <p class="note">您可以使用用户名进行登录，用户名不允许被修改</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-2">
+              <label class="form-label">昵称</label>
+            </div>
+            <div class="col-sm-9">
+              <input class="form-input" :value="user.nickname" v-model="user.nickname">  
+              <p class="note">您在本站的链接为：savorgames.com/member/{{form.nickname}}</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-2"></div>
+            <div class="col-sm-9"><button class="btn btn-block">更新</button></div>
+          </div>
+        </form>
+      </div>
+
+      <!-- 选择头像 -->
+      <div class="column col-3">
+        <figure class="avatar avatar-xl">
+          <img src="http://ww4.sinaimg.cn/large/742dd65cjw1f5ow9v2uz2j2074074aaz.jpg"></figure>
+        <figure class="avatar avatar-lg">
+          <img src="http://ww4.sinaimg.cn/large/742dd65cjw1f5ow9v2uz2j2074074aaz.jpg"></figure>
+        <figure class="avatar">
+          <img src="http://ww4.sinaimg.cn/large/742dd65cjw1f5ow9v2uz2j2074074aaz.jpg"></figure>
+        <button class="btn btn-block" @click.prevent="showUploadModel()">开始上传</button>
+        <p>图片大小请不要超过 2 MB，文件名请不要包括中文或者特殊字符，图像大小请随意。注意：我们会取图像中心点进行缩放剪裁</p>
+<!--         <form>
+          <input type="file" id="avatarInput" v-model="avatar.file" @change="fileInput()" />
+          <input type="hidden" v-model="avatar.token" />
+          <button class="btn btn-block" @click.prevent="uploadAvatar()">上传头像</button>
+        </form> -->
+      </div>
+
+
+    </div>
+    <div id="avatar-md" class="pb2md fade-in-scale" v-bind:class="{'pb2md-show': modelShow}">
+      <div class="avatarplane">
+        <div class="columns">
+          <div class="column col-6">
+
+
+            <input type="file" @change="fileOnChange($event)" accept="images/*" />
+
+            <div class="avatarInner">
+              <div class="resizer" v-el:resizer>
+                <img :src="upload.imgUrl" class="selectAvatar" v-bind:class="{'noavatar': upload.noavatar}">
+                <div id="frames" class="frames" v-el:frames v-bind:style="frames" v-show:="upload.noavatar ? false : true" @mousedown="mouseDown($event)" @mousemove="mouseMove($event)" @mouseup="mouseUp($event)"></div>
+              </div>
+            </div>
+            <div class="large-wrapper">
+            </div>
+
+
+          </div>
+          <div class="column col-6">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pb2md-overlay" @click.prevent="hiddenUploadModel()"></div>
+  </div>
+</template>
+<script>
+import { AvatarUploadApi, Qiniu_UploadUrl } from '../../../api/resources';
+import ModelUtils from '../../../utils/model';
+
+export default {
+  data() {
+    return {
+      modelShow: false,
+      user: {
+        nickname: ''
+      },
+      avatar: {
+        token: '',
+        file: null,
+        key: ''
+      },
+      upload: {
+        noavatar: true,
+        imgUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+      },
+      frames: {
+        top: '0px',
+        left: '0px',
+        lastPoint: null
+      }
+    };
+  },
+  methods: {
+    showUploadModel() {
+      this.modelShow = true;
+      ModelUtils.show(document.getElementById('avatar-md'));
+    },
+    hiddenUploadModel() {
+      ModelUtils.hidden(document.getElementById('avatar-md'));
+      this.modelShow = false;
+    },
+    fileInput() {
+      this.$http.get(AvatarUploadApi).then((response) => {
+        if (!response.ok || response.data.status !== 'success') {
+          window.alert('获取token失败:' + response.data.message);
+          return;
+        }
+        this.avatar.token = response.data.token;
+        this.avatar.key = response.data.key;
+      }, (response) => {
+        window.alert('获取token失败');
+      });
+    },
+    uploadAvatar() {
+      if (this.avatar.token === '' || this.avatar.file === null || this.avatar.key === '') return;
+      var formData = new FormData();
+      formData.append('token', this.avatar.token);
+      formData.append('file', this.avatar.file);
+      formData.append('key', this.avatar.key);
+      this.$http.post(Qiniu_UploadUrl, formData, {credentials: false, headers: {'Content-Type': 'multipart/form-data'}}).then((response) => {
+        window.alert(response.data);
+      }, response => {
+        window.alert(response.data);
+      });
+    },
+    fileOnChange(event) {
+      console.log(event.target.files[0]);
+      if (typeof FileReader === 'undefined') {
+        window.alert('浏览器不支持');
+      }
+      var reader = new FileReader();
+      var that = this;
+      reader.onload = function() {
+        var url = reader.result;
+        that.setImgUrl(url);
+      };
+      var file = event.target.files[0];
+      reader.readAsDataURL(file);
+    },
+    setImgUrl(url) {
+      this.upload.noavatar = false;
+      this.upload.imgUrl = url;
+    },
+    getOffset(event) {
+      var x, y;
+      if (event.touches) {
+        var touch = event.touches[0];
+        x = touch.clientX;
+        y = touch.clientY;
+      } else {
+        x = event.clientX;
+        y = event.clientY;
+      };
+      if (!this.lastPoint) {
+        this.lastPoint = {
+          x: x,
+          y: y
+        };
+      };
+      var offset = {
+        x: x - this.lastPoint.x,
+        y: y - this.lastPoint.y
+      };
+      this.lastPoint = {
+        x: x,
+        y: y
+      };
+      // console.log(offset);
+      return offset;
+    },
+    mouseDown(event) {
+      this.getOffset(event);
+    },
+    mouseMove(event) {
+      if (!this.lastPoint) return;
+      var offset = this.getOffset(event);
+      this.moveFrames(offset);
+    },
+    moveFrames(offset) {
+      var x = offset.x;
+      var y = offset.y;
+      var top = this.$els.frames.offsetTop;
+      var left = this.$els.frames.offsetLeft;
+      var size = this.$els.frames.offsetSize;
+      var width = this.$els.resizer.offsetWidth;
+      var height = this.$els.resizer.offsetHeight;
+      if (x + size + left > width) {
+        x = width - size;
+      } else {
+        x = x + left;
+      };
+      if (y + size + top > height) {
+        y = height - size;
+      } else {
+        y = y + top;
+      };
+      x = x < 0 ? 0 : x;
+      y = y < 0 ? 0 : y;
+      x = x + 72 > width ? width - 72 : x; // 防止越界
+      y = y + 72 > height ? height - 72 : y;
+      this.frames = {
+        top: y + 'px',
+        left: x + 'px'
+      };
+      // this.$els.frames.offsetTop = y;
+      // this.$els.frames.offsetLeft = x;
+    },
+    mouseUp(event) {
+      this.lastPoint = null;
+    }
+  },
+  vuex: {
+    getters: {
+      user: ({Auth}) => Auth.user
+    }
+  },
+  ready() {}
+};
+</script>
+<style>
+.settingbox .box {
+    width: 70%;
+    margin: auto;
+    padding-top: 70px;
+}
+.settingbox .box .note{
+    color:#747474;
+}
+
+/*模态框*/
+.pb2md {
+    position: fixed;
+    /*top: 50%;*/
+    top: 56%;
+    left: 50%;
+    width: 50%;
+    height: auto;
+    z-index: 2000;
+    visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+.pb2md-show {
+  visibility: visible;
+}
+.pb2md-overlay {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    opacity: 0;
+/*    background: rgba(30,30,30,0.5);*/
+    -webkit-transition: all 0.3s;
+    -moz-transition: all 0.3s;
+    transition: all 0.3s;
+}
+body.pb2md-show .pb2md-overlay {
+    opacity: 1;
+    visibility: visible;
+}
+
+#avatar-md {
+  max-width: 825px;
+  height:auto;
+}
+
+.avatarplane{
+  width: 100%;
+  background-color: #FFFBE0;
+  border-radius: 4px;
+  box-shadow:0 5px 10px rgba(0,0,0,.15);
+  padding:20px;
+}
+
+.pb2md-show.fade-in-scale .avatarplane {
+    -webkit-transform: scale(1);
+    -moz-transform: scale(1);
+    -ms-transform: scale(1);
+    transform: scale(1);
+    opacity: 1;
+}
+.fade-in-scale .avatarplane {
+    -webkit-transform: scale(0.7);
+    -moz-transform: scale(0.7);
+    -ms-transform: scale(0.7);
+    transform: scale(0.7);
+    opacity: 0;
+    -webkit-transition: all 0.3s;
+    -moz-transition: all 0.3s;
+    transition: all 0.3s;
+}
+
+/*图片选择*/
+.avatarInner{
+  margin-top: 15px;
+    width: 100%;
+    position: relative;
+    font-size: 0;
+    overflow: hidden;
+    display: box;
+}
+
+.avatarInner img {
+  max-width: 100%;
+}
+
+.avatarInner .noavatar {
+  height:320px;
+  width: 320px;
+  border-radius: 4px;
+  background-color: #efeeef;
+  border: 1px solid #e8e8e8;
+}
+
+.frames {
+  width: 72px; height: 72px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px solid red;
+    cursor: move;
+    outline: rgba(0, 0, 0, 0.6) solid 10000px;
+}
+</style>
