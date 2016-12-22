@@ -12,7 +12,7 @@
 ### 关于fabric
 fabfile.py 可以将文件打包并部署到服务器，配置服务器端口修改 fabfile.py 文件
 
-## 前端(vue 1.0)
+# 前端(vue 1.0)
 ## 如何使用？
 前端没有使用 vue 默认脚手架，使用了 ele 的 cooking
 
